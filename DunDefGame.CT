@@ -2278,7 +2278,7 @@ print(string.format("subscript gobjects address: 0x%08X", gobjects))
     </CheatEntry>
     <CheatEntry>
       <ID>226</ID>
-      <Description>"main ccode script"</Description>
+      <Description>"main script"</Description>
       <Options moHideChildren="1"/>
       <Color>FF8000</Color>
       <VariableType>Auto Assembler Script</VariableType>
@@ -2301,9 +2301,11 @@ registersymbol(gobjects_arr)
 label(interntest) // used only for testing in this script
 label(testvar) // gobjects test
 label(testvar2) // gnames test
+label(runningf) // set to 1 while the thread is still running
 registersymbol(interntest)
 registersymbol(testvar)
 registersymbol(testvar2)
+registersymbol(runningf)
 
 registersymbol(code1)
 registersymbol(vars1)
@@ -2311,23 +2313,28 @@ registersymbol(vars1)
 createThread(code1)
 
 {$c}
+//#include &lt;windows.h&gt;
+
 int* getObjectReference(int* gobjects, int index) {
-     return gobjects+index;
+     return gobjects+index; // edit later to (*gobjects)+index
 }
 
 int* getGameEngineObject(int* gobjects) {
+     int* engine = (int*)0;
      int count = *((gobjects)+1); // broken, wrong count (fixed)
-                                                  // broken too??
      int* i45 = getObjectReference(*gobjects, 45); // [45] contains game engine class
                                                   // pushes the pointer to the data array
                                                   // supposed to push the address of the array?
                                                   // (fixed)
-     int temp = 0;
      for (int i = 0; i &lt; count; i++) {
-         //temp = temp + 1;
          int* tmp_object = getObjectReference(*gobjects, i); // (fixed)
+         if (tmp_object &amp;&amp; objectIsA(*tmp_object, *i45)) {
+            // missing "Default" name check
+            engine = tmp_object;
+         }
      }
-     return i45;
+     //return i45;
+     return engine;
 }
 
 //int countTest(int gobjects) {
@@ -2347,9 +2354,74 @@ int objectIsA(int* checkObject, int* oClass) {
      return 0;
 }
 
+// ============================
+// ============================
+// ============================
+//#define DECLSPEC_IMPORT __declspec(dllimport)
+
+//#define WINBASEAPI DECLSPEC_IMPORT
+
+//typedef int BOOL;
+
+//WINBASEAPI BOOL WINAPI AllocConsole( VOID );
+//__declspec(dllimport) BOOL __stdcall AllocConsole( void );
+//BOOL __stdcall AllocConsole( void );
+
+// ============================
+// ============================
+// ============================
+
+//#define _ACRTIMP __declspec(dllimport)
+//#define _ACRTIMP_ALT _ACRTIMP
+
+//typedef struct _iobuf
+//{
+//    void* _Placeholder;
+//} FILE;
+
+//struct _iobuf {
+//        char *_ptr;
+//        int   _cnt;
+//        char *_base;
+//        int   _flag;
+//        int   _file;
+//        int   _charbuf;
+//        int   _bufsiz;
+//        char *_tmpfname;
+//        };
+//typedef struct _iobuf FILE;
+
+//_ACRTIMP_ALT FILE* __cdecl __acrt_iob_func(unsigned _Ix);
+//_ACRTIMP_ALT FILE* __cdecl __acrt_iob_func(unsigned _Ix);
+
+//#define stdin  (__acrt_iob_func(0))
+//#define stdout (__acrt_iob_func(1))
+//#define stderr (__acrt_iob_func(2))
+
+//int freopen_s(
+//   FILE ** stream,
+//   const char * fileName,
+//   const char * mode,
+//   FILE* oldStream
+//);
+
+//FILE *freopen(
+//   const char *path,
+//   const char *mode,
+//   FILE *stream
+//);
+
+//void CreateConsole()
+//{
+//  FILE* f;
+//  freopen_s(&amp;f, "CONOUT$", "w", stdout);
+//  freopen("CONOUT$", "w", stdout);
+//}
 
 {$asm}
 code1:
+mov [runningf],1
+
 push eax
 mov eax,DunDefGame.exe
 mov [base],eax // module base address
@@ -2376,7 +2448,7 @@ push eax
 {$ccode var=eax}
 extern int* gobjects;
 extern int* gobjects_arr;
-int* array = &amp;gobjects_arr;
+int* array = &amp;gobjects_arr; // edit later to array = gobjects
 int length = *((&amp;gobjects)+1);
 
 //int* last = &amp;gobjects_arr+length-1;
@@ -2386,23 +2458,31 @@ int length = *((&amp;gobjects)+1);
 //int* i45 = getObjectReference(gobjects, 45);
 //var = i45;
 
-int* engine = getGameEngineObject(&amp;gobjects);
-var = engine;
+//int* engine = getGameEngineObject(&amp;gobjects);
+//var = engine;
 
 //int asdf = 1;
-int asdf = objectIsA(engine, getObjectReference(gobjects, 45));
-var = (int)asdf;
+//int asdf = objectIsA(engine, getObjectReference(gobjects, 45));
+//var = (int)asdf;
 
-asdf = countTest(&amp;gobjects); // counting fixed
-var = asdf;
+//asdf = countTest(&amp;gobjects); // counting fixed
+//var = asdf;
 
-int* last = getObjectReference(gobjects, length-1);
-int* i45 = getObjectReference(gobjects, 45);
-var = i45;
+//int* last = getObjectReference(gobjects, length-1);
+//int* i45 = getObjectReference(gobjects, 45);
+//var = i45;
+
+//int* engine = getGameEngineObject(&amp;gobjects); // untested
+//var = engine;
+
+//CreateConsole();
 
 {$asm}
 mov [interntest],eax
 pop eax
+
+mov [runningf],0
+
 ret
 
 vars1:
@@ -2420,6 +2500,8 @@ testvar:
 dd 0
 testvar2:
 dd 0
+runningf:
+dd 0
 
 [DISABLE]
 dealloc(code1) // memory
@@ -2436,6 +2518,13 @@ unregistersymbol(testvar)
 unregistersymbol(testvar2)
 </AssemblerScript>
       <CheatEntries>
+        <CheatEntry>
+          <ID>264</ID>
+          <Description>"RUNNING"</Description>
+          <ShowAsSigned>0</ShowAsSigned>
+          <VariableType>4 Bytes</VariableType>
+          <Address>runningf</Address>
+        </CheatEntry>
         <CheatEntry>
           <ID>251</ID>
           <Description>"Debug Data"</Description>
