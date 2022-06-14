@@ -1738,7 +1738,7 @@ D800:Physical
     <CheatEntry>
       <ID>226</ID>
       <Description>"main script (takes a few seconds to run)"</Description>
-      <Options moHideChildren="1"/>
+      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
       <Color>FF8000</Color>
       <VariableType>Auto Assembler Script</VariableType>
       <AssemblerScript>[ENABLE]
@@ -1788,11 +1788,11 @@ local gobjects = getAddressSafe("DunDefGame.exe+0E4437C")
 local gnames_array = getAddressSafe("[DunDefGame.exe+0E32064]")
 local gobjects_array = getAddressSafe("[DunDefGame.exe+0E4437C]")
 
-printf("module base 0x%X", base)
+--printf("module base 0x%X", base)
 registerSymbol("base", base)
-printf("gnames 0x%X", gnames)
+--printf("gnames 0x%X", gnames)
 registerSymbol("gnames", gnames)
-printf("gobjects 0x%X", gobjects)
+--printf("gobjects 0x%X", gobjects)
 registerSymbol("gobjects", gobjects)
 
 -- get pointer to object in GObjects[index]
@@ -1809,7 +1809,40 @@ end
 
 -- get full name of object
 function get_full_object_name(object) -- done
+    --printf("%X", object)
 	local object_s = string.format("%X", object)
+
+    local outer_outer = readInteger(string.format("[%s+0x28]+0x28", object_s))
+    --printf("outer_outer = 0x%X", outer_outer)
+
+    if outer_outer == 0 then
+       local outer_index = readInteger(string.format("[%s+0x28]+0x2C", object_s))
+	   local outer_name = read_name_index(outer_index)
+
+	   local index = readInteger(string.format("%s+0x2C", object_s))
+	   local name = read_name_index(index)
+
+	   local class_index = readInteger(string.format("[%s+0x34]+0x2C", object_s))
+	   local class_name = read_name_index(class_index)
+
+	   --return string.format("%s.%s.%s", outer_name, name, class_name)
+       return string.format("%s %s.%s", class_name, outer_name, name)
+    else
+       local outer_index = readInteger(string.format("[%s+0x28]+0x2C", object_s))
+	   local outer_name = read_name_index(outer_index)
+
+	   local index = readInteger(string.format("%s+0x2C", object_s))
+	   local name = read_name_index(index)
+
+	   local class_index = readInteger(string.format("[%s+0x34]+0x2C", object_s))
+	   local class_name = read_name_index(class_index)
+
+       local outer_outer_index = readInteger(string.format("[[%s+0x28]+0x28]+2C", object_s))
+       local outer_outer_name = read_name_index(outer_outer_index)
+
+	   --return string.format("%s.%s.%s", outer_name, name, class_name)
+       return string.format("%s %s.%s.%s", class_name, outer_outer_name, outer_name, name)
+    end
 
 	local outer_index = readInteger(string.format("[%s+0x28]+0x2C", object_s))
 	local outer_name = read_name_index(outer_index)
@@ -1820,7 +1853,8 @@ function get_full_object_name(object) -- done
 	local class_index = readInteger(string.format("[%s+0x34]+0x2C", object_s))
 	local class_name = read_name_index(class_index)
 
-	return string.format("%s.%s.%s", outer_name, name, class_name)
+	--return string.format("%s.%s.%s", outer_name, name, class_name)
+    return string.format("%s %s.%s", class_name, outer_name, name)
 end
 
 -- get full name of referenced object
@@ -1869,19 +1903,17 @@ function get_instance_of_ptr(class_ptr) -- done
 	return instance
 end
 
---print("\nstart")
---printf("gnames:   0x%X", gnames)
---printf("gnames array:  0x%X", gnames_array)
---printf("gobjects:   0x%X", gobjects)
---printf("gobjects array: 0x%X", gobjects_array)
+function test_fn()
+    print("test_fn() ran")
+end
 
 local game_engine = get_instance_of_ptr(get_object_reference(45))
 printf("%s found at 0x%X", get_full_object_name_ptr(game_engine), game_engine)
+registerSymbol("game_engine", game_engine)
 
 local hero_manager = get_instance_of_ptr(get_object_reference(37643))
 printf("%s found at 0x%X", get_full_object_name_ptr(hero_manager), hero_manager)
-
---print("done")
+registerSymbol("hero_manager", hero_manager)
 
 {$asm}
 {$c}
@@ -2119,8 +2151,131 @@ unregistersymbol(shouldrun)
           <GroupHeader>1</GroupHeader>
           <CheatEntries>
             <CheatEntry>
+              <ID>336</ID>
+              <Description>"ProcessEvent hook (broken wip)"</Description>
+              <Options moHideChildren="1"/>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>{$lua}
+if syntaxcheck then return end
+local counter = 0
+
+{$asm}
+
+[ENABLE]
+
+aobscanmodule(ProcessEvent_pFunction,DunDefGame.exe,8B 5D 08 F7 83 90 00 00 00 02 04 00 00) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+
+{$lua}
+print("")
+test_fn()
+counter = 0
+
+{$asm}
+
+newmem:
+
+code:
+  mov ebx,[ebp+08]
+  //{$luacode obj=ebx var1=ecx}
+//{$luacode obj=ebx var1=edx var2=ebp var3=eax var4=ecx var5=esi var6=edi var7=esp var8=eip}
+{$luacode obj=ebx var1=ecx}
+if not counter then counter = 0 end
+--if counter &lt; 1000 then
+if counter &lt; 2000 then
+   local name = get_full_object_name(obj)
+   printf("obj = 0x%X", obj)
+   print(name)
+   --if name:match("Equipment") then
+   if name == "Function UDKGame.DunDefDroppedEquipment.ReportEquipmentToStats" then
+      --printf("ebx = 0x%X, name = %s", obj, name)
+      --local name2 = get_full_object_name(var1)
+      --printf("ecx = 0x%X, name = %s", var1, name)
+      print(name)
+      --printf("eax = 0x%X", var3)
+      printf("ebx = 0x%X", obj)
+      --printf("ecx = 0x%X", var4)
+      --printf("edx = 0x%X", var1)
+      --printf("esi = 0x%X", var5)
+      --printf("edi = 0x%X", var6)
+      --printf("ebp = 0x%X", var2)
+      --printf("esp = 0x%X", var7)
+      --printf("eip = 0x%X", var8)
+   end
+   counter = counter + 1
+   --if name == "DunDefCagedPet.Tick.Function" then
+      --counter = counter + 1
+      --printf("ebx = 0x%X", obj)
+   --   print(name)
+   --end
+   if counter == 1999 then print("counter is 1999") end
+   --if counter &gt; 1950 then print(counter) end -- ?????
+   --print(counter)
+end
+--print("done")
+
+{$asm}
+  test [ebx+00000090],00000402
+  jmp return
+
+ProcessEvent_pFunction:
+  jmp newmem
+  nop 8
+return:
+registersymbol(ProcessEvent_pFunction)
+
+[DISABLE]
+
+ProcessEvent_pFunction:
+  db 8B 5D 08 F7 83 90 00 00 00 02 04 00 00
+
+unregistersymbol(ProcessEvent_pFunction)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: DunDefGame.exe+90B30
+
+DunDefGame.exe+90B19: 33 C5                          - xor eax,ebp
+DunDefGame.exe+90B1B: 89 45 F0                       - mov [ebp-10],eax
+DunDefGame.exe+90B1E: 53                             - push ebx
+DunDefGame.exe+90B1F: 56                             - push esi
+DunDefGame.exe+90B20: 57                             - push edi
+DunDefGame.exe+90B21: 50                             - push eax
+DunDefGame.exe+90B22: 8D 45 F4                       - lea eax,[ebp-0C]
+DunDefGame.exe+90B25: 64 A3 00 00 00 00              - mov fs:[00000000],eax
+DunDefGame.exe+90B2B: 8B F9                          - mov edi,ecx
+DunDefGame.exe+90B2D: 89 7D EC                       - mov [ebp-14],edi
+// ---------- INJECTING HERE ----------
+DunDefGame.exe+90B30: 8B 5D 08                       - mov ebx,[ebp+08]
+// ---------- DONE INJECTING  ----------
+DunDefGame.exe+90B33: F7 83 90 00 00 00 02 04 00 00  - test [ebx+00000090],00000402
+DunDefGame.exe+90B3D: 0F 84 8B 02 00 00              - je DunDefGame.exe+90DCE
+DunDefGame.exe+90B43: 83 7B 04 FF                    - cmp dword ptr [ebx+04],-01
+DunDefGame.exe+90B47: 74 05                          - je DunDefGame.exe+90B4E
+DunDefGame.exe+90B49: 8D 43 2C                       - lea eax,[ebx+2C]
+DunDefGame.exe+90B4C: EB 11                          - jmp DunDefGame.exe+90B5F
+DunDefGame.exe+90B4E: 6A 01                          - push 01
+DunDefGame.exe+90B50: 6A 01                          - push 01
+DunDefGame.exe+90B52: 68 B4 4B 86 01                 - push DunDefGame.exe+B04BB4
+DunDefGame.exe+90B57: 8D 4D E4                       - lea ecx,[ebp-1C]
+}
+</AssemblerScript>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>337</ID>
+                  <Description>"don't disable this or the game will crash :)"</Description>
+                  <Color>C0C0C0</Color>
+                  <GroupHeader>1</GroupHeader>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
               <ID>289</ID>
               <Description>"Module Base"</Description>
+              <Options moHideChildren="1"/>
               <ShowAsSigned>0</ShowAsSigned>
               <Color>BBBBBB</Color>
               <GroupHeader>1</GroupHeader>
@@ -2330,7 +2485,30 @@ unregistersymbol(shouldrun)
                   <GroupHeader>1</GroupHeader>
                   <CheatEntries>
                     <CheatEntry>
+                      <ID>259</ID>
+                      <Description>"Class.Name.Index"</Description>
+                      <ShowAsSigned>0</ShowAsSigned>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>testvar</Address>
+                      <Offsets>
+                        <Offset>2C</Offset>
+                        <Offset>34</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
                       <ID>245</ID>
+                      <Description>"Outer.Outer.Name.Index"</Description>
+                      <ShowAsSigned>0</ShowAsSigned>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>testvar</Address>
+                      <Offsets>
+                        <Offset>2C</Offset>
+                        <Offset>28</Offset>
+                        <Offset>28</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>338</ID>
                       <Description>"Outer.Name.Index"</Description>
                       <ShowAsSigned>0</ShowAsSigned>
                       <VariableType>4 Bytes</VariableType>
@@ -2348,17 +2526,6 @@ unregistersymbol(shouldrun)
                       <Address>testvar</Address>
                       <Offsets>
                         <Offset>2C</Offset>
-                      </Offsets>
-                    </CheatEntry>
-                    <CheatEntry>
-                      <ID>259</ID>
-                      <Description>"Class.Name.Index"</Description>
-                      <ShowAsSigned>0</ShowAsSigned>
-                      <VariableType>4 Bytes</VariableType>
-                      <Address>testvar</Address>
-                      <Offsets>
-                        <Offset>2C</Offset>
-                        <Offset>34</Offset>
                       </Offsets>
                     </CheatEntry>
                   </CheatEntries>
@@ -2382,7 +2549,6 @@ unregistersymbol(shouldrun)
                   <Address>gnames</Address>
                   <Offsets>
                     <Offset>[testvar2]*4</Offset>
-                    <Offset>0</Offset>
                   </Offsets>
                   <CheatEntries>
                     <CheatEntry>
@@ -2398,7 +2564,6 @@ unregistersymbol(shouldrun)
                       <Offsets>
                         <Offset>10</Offset>
                         <Offset>[testvar2]*4</Offset>
-                        <Offset>0</Offset>
                       </Offsets>
                     </CheatEntry>
                   </CheatEntries>
@@ -2406,45 +2571,763 @@ unregistersymbol(shouldrun)
               </CheatEntries>
             </CheatEntry>
             <CheatEntry>
-              <ID>253</ID>
-              <Description>"interntest dec"</Description>
-              <ShowAsSigned>0</ShowAsSigned>
-              <VariableType>4 Bytes</VariableType>
-              <Address>interntest</Address>
-            </CheatEntry>
-            <CheatEntry>
-              <ID>265</ID>
-              <Description>"interntest hex"</Description>
+              <ID>290</ID>
+              <Description>"UGameEngine address"</Description>
+              <Options moHideChildren="1"/>
               <ShowAsHex>1</ShowAsHex>
               <ShowAsSigned>0</ShowAsSigned>
               <VariableType>4 Bytes</VariableType>
-              <Address>interntest</Address>
+              <Address>game_engine</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>292</ID>
+                  <Description>"GamePlayers"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>game_engine</Address>
+                  <Offsets>
+                    <Offset>478</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>297</ID>
+                      <Description>"Data"</Description>
+                      <ShowAsSigned>0</ShowAsSigned>
+                      <GroupHeader>1</GroupHeader>
+                      <Address>game_engine</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                        <Offset>478</Offset>
+                      </Offsets>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>298</ID>
+                          <Description>"Player 1"</Description>
+                          <ShowAsSigned>0</ShowAsSigned>
+                          <GroupHeader>1</GroupHeader>
+                          <Address>game_engine</Address>
+                          <Offsets>
+                            <Offset>0</Offset>
+                            <Offset>0</Offset>
+                            <Offset>478</Offset>
+                          </Offsets>
+                          <CheatEntries>
+                            <CheatEntry>
+                              <ID>299</ID>
+                              <Description>"Actor"</Description>
+                              <ShowAsSigned>0</ShowAsSigned>
+                              <GroupHeader>1</GroupHeader>
+                              <Address>game_engine</Address>
+                              <Offsets>
+                                <Offset>0</Offset>
+                                <Offset>40</Offset>
+                                <Offset>0</Offset>
+                                <Offset>478</Offset>
+                              </Offsets>
+                              <CheatEntries>
+                                <CheatEntry>
+                                  <ID>300</ID>
+                                  <Description>"Pawn"</Description>
+                                  <ShowAsSigned>0</ShowAsSigned>
+                                  <GroupHeader>1</GroupHeader>
+                                  <Address>game_engine</Address>
+                                  <Offsets>
+                                    <Offset>0</Offset>
+                                    <Offset>214</Offset>
+                                    <Offset>40</Offset>
+                                    <Offset>0</Offset>
+                                    <Offset>478</Offset>
+                                  </Offsets>
+                                  <CheatEntries>
+                                    <CheatEntry>
+                                      <ID>335</ID>
+                                      <Description>"X"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Float</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>54</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>303</ID>
+                                      <Description>"Y"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Float</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>58</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>302</ID>
+                                      <Description>"Z"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Float</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>5C</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>301</ID>
+                                      <Description>"DrawScale"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Float</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>6C</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>306</ID>
+                                      <Description>"PlayerGroundSpeed"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Float</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>968</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>304</ID>
+                                      <Description>"Health"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>4 Bytes</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>318</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>305</ID>
+                                      <Description>"HealthMax"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>4 Bytes</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>31C</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>307</ID>
+                                      <Description>"MyPlayerHero"</Description>
+                                      <ShowAsHex>1</ShowAsHex>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>4 Bytes</VariableType>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>D10</Offset>
+                                        <Offset>214</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                      <CheatEntries>
+                                        <CheatEntry>
+                                          <ID>308</ID>
+                                          <Description>"HeroHealthModifier"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>4D8</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>314</ID>
+                                          <Description>"HeroSpeedModifier"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>4DC</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>313</ID>
+                                          <Description>"HeroDamageModifier"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>4E0</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>315</ID>
+                                          <Description>"HeroCastingModifier"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>4E4</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>312</ID>
+                                          <Description>"HeroLevel"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>500</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>309</ID>
+                                          <Description>"HeroLevelCap"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>504</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>310</ID>
+                                          <Description>"HeroExperience"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>50C</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>311</ID>
+                                          <Description>"HeroName"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>String</VariableType>
+                                          <Length>10</Length>
+                                          <Unicode>1</Unicode>
+                                          <CodePage>0</CodePage>
+                                          <ZeroTerminate>1</ZeroTerminate>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>0</Offset>
+                                            <Offset>538</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>324</ID>
+                                          <Description>"Color1"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <GroupHeader>1</GroupHeader>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>550</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                          <CheatEntries>
+                                            <CheatEntry>
+                                              <ID>320</ID>
+                                              <Description>"R"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>550</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>323</ID>
+                                              <Description>"G"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>554</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>322</ID>
+                                              <Description>"B"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>558</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>321</ID>
+                                              <Description>"A"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>55C</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                          </CheatEntries>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>330</ID>
+                                          <Description>"Color2"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <GroupHeader>1</GroupHeader>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>560</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                          <CheatEntries>
+                                            <CheatEntry>
+                                              <ID>331</ID>
+                                              <Description>"R"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>560</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>332</ID>
+                                              <Description>"G"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>564</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>333</ID>
+                                              <Description>"B"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>568</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>334</ID>
+                                              <Description>"A"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>56C</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                          </CheatEntries>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>325</ID>
+                                          <Description>"Color3"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <GroupHeader>1</GroupHeader>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>570</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                          <CheatEntries>
+                                            <CheatEntry>
+                                              <ID>326</ID>
+                                              <Description>"R"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>570</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>327</ID>
+                                              <Description>"G"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>574</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>328</ID>
+                                              <Description>"B"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>578</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>329</ID>
+                                              <Description>"A"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>Float</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>57C</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                          </CheatEntries>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>340</ID>
+                                          <Description>"HeroEquipments"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <GroupHeader>1</GroupHeader>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>584</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                          <CheatEntries>
+                                            <CheatEntry>
+                                              <ID>343</ID>
+                                              <Description>"Array"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <GroupHeader>1</GroupHeader>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>0</Offset>
+                                                <Offset>584</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                              <CheatEntries>
+                                                <CheatEntry>
+                                                  <ID>342</ID>
+                                                  <Description>"HeroEquipments[0]"</Description>
+                                                  <ShowAsHex>1</ShowAsHex>
+                                                  <ShowAsSigned>0</ShowAsSigned>
+                                                  <VariableType>4 Bytes</VariableType>
+                                                  <Address>game_engine</Address>
+                                                  <Offsets>
+                                                    <Offset>0</Offset>
+                                                    <Offset>584</Offset>
+                                                    <Offset>D10</Offset>
+                                                    <Offset>214</Offset>
+                                                    <Offset>40</Offset>
+                                                    <Offset>0</Offset>
+                                                    <Offset>478</Offset>
+                                                  </Offsets>
+                                                  <CheatEntries>
+                                                    <CheatEntry>
+                                                      <ID>346</ID>
+                                                      <Description>"Item Address"</Description>
+                                                      <ShowAsHex>1</ShowAsHex>
+                                                      <ShowAsSigned>0</ShowAsSigned>
+                                                      <VariableType>4 Bytes</VariableType>
+                                                      <Address>game_engine</Address>
+                                                      <Offsets>
+                                                        <Offset>0</Offset>
+                                                        <Offset>584</Offset>
+                                                        <Offset>D10</Offset>
+                                                        <Offset>214</Offset>
+                                                        <Offset>40</Offset>
+                                                        <Offset>0</Offset>
+                                                        <Offset>478</Offset>
+                                                      </Offsets>
+                                                    </CheatEntry>
+                                                    <CheatEntry>
+                                                      <ID>347</ID>
+                                                      <Description>"EquipmentName"</Description>
+                                                      <ShowAsSigned>0</ShowAsSigned>
+                                                      <VariableType>String</VariableType>
+                                                      <Length>100</Length>
+                                                      <Unicode>1</Unicode>
+                                                      <CodePage>0</CodePage>
+                                                      <ZeroTerminate>1</ZeroTerminate>
+                                                      <Address>game_engine</Address>
+                                                      <Offsets>
+                                                        <Offset>0</Offset>
+                                                        <Offset>174</Offset>
+                                                        <Offset>0</Offset>
+                                                        <Offset>584</Offset>
+                                                        <Offset>D10</Offset>
+                                                        <Offset>214</Offset>
+                                                        <Offset>40</Offset>
+                                                        <Offset>0</Offset>
+                                                        <Offset>478</Offset>
+                                                      </Offsets>
+                                                    </CheatEntry>
+                                                    <CheatEntry>
+                                                      <ID>348</ID>
+                                                      <Description>"CustomEffectText"</Description>
+                                                      <ShowAsSigned>0</ShowAsSigned>
+                                                      <VariableType>String</VariableType>
+                                                      <Length>100</Length>
+                                                      <Unicode>1</Unicode>
+                                                      <CodePage>0</CodePage>
+                                                      <ZeroTerminate>1</ZeroTerminate>
+                                                      <Address>game_engine</Address>
+                                                      <Offsets>
+                                                        <Offset>0</Offset>
+                                                        <Offset>180</Offset>
+                                                        <Offset>0</Offset>
+                                                        <Offset>584</Offset>
+                                                        <Offset>D10</Offset>
+                                                        <Offset>214</Offset>
+                                                        <Offset>40</Offset>
+                                                        <Offset>0</Offset>
+                                                        <Offset>478</Offset>
+                                                      </Offsets>
+                                                    </CheatEntry>
+                                                  </CheatEntries>
+                                                </CheatEntry>
+                                              </CheatEntries>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>344</ID>
+                                              <Description>"Count"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>588</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>345</ID>
+                                              <Description>"Max"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>58C</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                          </CheatEntries>
+                                        </CheatEntry>
+                                        <CheatEntry>
+                                          <ID>341</ID>
+                                          <Description>"UserID"</Description>
+                                          <ShowAsSigned>0</ShowAsSigned>
+                                          <VariableType>4 Bytes</VariableType>
+                                          <Address>game_engine</Address>
+                                          <Offsets>
+                                            <Offset>5A4</Offset>
+                                            <Offset>D10</Offset>
+                                            <Offset>214</Offset>
+                                            <Offset>40</Offset>
+                                            <Offset>0</Offset>
+                                            <Offset>478</Offset>
+                                          </Offsets>
+                                        </CheatEntry>
+                                      </CheatEntries>
+                                    </CheatEntry>
+                                  </CheatEntries>
+                                </CheatEntry>
+                                <CheatEntry>
+                                  <ID>339</ID>
+                                  <Description>"MyHero"</Description>
+                                  <ShowAsSigned>0</ShowAsSigned>
+                                  <GroupHeader>1</GroupHeader>
+                                  <Address>game_engine</Address>
+                                  <Offsets>
+                                    <Offset>0</Offset>
+                                    <Offset>964</Offset>
+                                    <Offset>40</Offset>
+                                    <Offset>0</Offset>
+                                    <Offset>478</Offset>
+                                  </Offsets>
+                                </CheatEntry>
+                              </CheatEntries>
+                            </CheatEntry>
+                          </CheatEntries>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>295</ID>
+                      <Description>"Count"</Description>
+                      <ShowAsSigned>0</ShowAsSigned>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>game_engine</Address>
+                      <Offsets>
+                        <Offset>47C</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>294</ID>
+                      <Description>"Max"</Description>
+                      <ShowAsSigned>0</ShowAsSigned>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>game_engine</Address>
+                      <Offsets>
+                        <Offset>480</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
             </CheatEntry>
             <CheatEntry>
-              <ID>262</ID>
-              <Description>"[interntest]"</Description>
+              <ID>291</ID>
+              <Description>"UDunDefHeroManager address?"</Description>
               <ShowAsHex>1</ShowAsHex>
               <ShowAsSigned>0</ShowAsSigned>
               <VariableType>4 Bytes</VariableType>
-              <Address>interntest</Address>
-              <Offsets>
-                <Offset>0</Offset>
-              </Offsets>
-            </CheatEntry>
-            <CheatEntry>
-              <ID>263</ID>
-              <Description>"[interntest+4]"</Description>
-              <ShowAsHex>1</ShowAsHex>
-              <ShowAsSigned>0</ShowAsSigned>
-              <VariableType>4 Bytes</VariableType>
-              <Address>interntest</Address>
-              <Offsets>
-                <Offset>4</Offset>
-              </Offsets>
+              <Address>hero_manager</Address>
             </CheatEntry>
             <CheatEntry>
               <ID>266</ID>
-              <Description>"old"</Description>
+              <Description>"trash"</Description>
               <Options moHideChildren="1"/>
               <Color>808080</Color>
               <GroupHeader>1</GroupHeader>
@@ -2642,6 +3525,43 @@ unregisterSymbol("ptr_gengine")
                       <Address>ptr_gengine</Address>
                     </CheatEntry>
                   </CheatEntries>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>253</ID>
+                  <Description>"interntest dec"</Description>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>interntest</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>265</ID>
+                  <Description>"interntest hex"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>interntest</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>262</ID>
+                  <Description>"[interntest]"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>interntest</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>263</ID>
+                  <Description>"[interntest+4]"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <ShowAsSigned>0</ShowAsSigned>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>interntest</Address>
+                  <Offsets>
+                    <Offset>4</Offset>
+                  </Offsets>
                 </CheatEntry>
               </CheatEntries>
             </CheatEntry>
@@ -3157,6 +4077,31 @@ unregisterSymbol("ptr_gengine")
         <Byte>B7</Byte>
       </After>
     </CodeEntry>
+    <CodeEntry>
+      <Description>ProcessEvent</Description>
+      <AddressString>DunDefGame.exe+90B00</AddressString>
+      <Before>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
+      </Before>
+      <Actual>
+        <Byte>E9</Byte>
+        <Byte>71</Byte>
+        <Byte>F5</Byte>
+        <Byte>24</Byte>
+        <Byte>B6</Byte>
+      </Actual>
+      <After>
+        <Byte>68</Byte>
+        <Byte>80</Byte>
+        <Byte>6E</Byte>
+        <Byte>73</Byte>
+        <Byte>01</Byte>
+      </After>
+    </CodeEntry>
   </CheatCodes>
   <UserdefinedSymbols>
     <SymbolEntry>
@@ -3186,6 +4131,14 @@ unregisterSymbol("ptr_gengine")
     <SymbolEntry>
       <Name>gobjects</Name>
       <Address>1BA437C</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>game_engine</Name>
+      <Address>26E1A474</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>hero_manager</Name>
+      <Address>26E1A534</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
@@ -5025,4 +5978,11 @@ end
 
 require("ce.view_mode")
 </LuaScript>
+  <DisassemblerComments>
+    <DisassemblerComment>
+      <Address>"DunDefGame.exe"+90B00</Address>
+      <Comment>void __thiscall ProcessEvent(UObject* pObject, UFunction* pFunction, void* pParms, void* pResult)
+</Comment>
+    </DisassemblerComment>
+  </DisassemblerComments>
 </CheatTable>
