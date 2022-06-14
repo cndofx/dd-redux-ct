@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CheatTable CheatEngineTableVersion="42">
+  <Forms>
+    <testform1 Class="TCEForm" Encoding="Ascii85">O@;lo!!QtrousYX1Q0V+B^HHYWnf_fi-.l64uOs,O_Hbk@,nDB?4@%CU[1zRC^b[nFYCVhzbB8eVwI*55O+1x-Hf24t$i#.IczET3Mcm/UmFT8yr94}]1ZzYSyN.4?l8eY0_aU@sCeX7H{6EK7hIGrNz^^+fj8IX4vvJ9plLuxfBBy^7O2pS.y7kuX0b]1Ij[^Zkp$BfcG6,[X@Rh}*UL6x])VOc/j-I[cavWxX;ygMY-Xiy]$C7@dNKce?8w?RE(p,E@{}khQ3Fch^1c6.]BK{a*f,z;d_nQa^ok{GH%n84?tK]p</testform1>
+    <frmHeroEditor Class="TCEForm" Encoding="Ascii85">y.n/b8(wpZN9-AU=34:BB4FVKY$L}o(]MOocAUD%O,su?RjO3Yc([bB$M.%yu8Y$Jzk;x!Si+]0zlt5KxsQ2dULHlVlT8xOo$q_#Io}/:cy=b:CYNVzW6}d-VX_z[$Z]k;9:MQVaxeljszb9n1aQ8f]ZHCZ.FbQ5R)T0sy3qg9n%yad==4_TO0Z]%9g6s=ee7Z4TRlu%K%P%A?}wsg$Jagu%NGEx;kfPY5nRIeKnYHb;9q$8*A7d.(Dmdldqp8eRg2SUNj^Cf2LYlH8%zEllBr(x?dE#3JV:Om!+%h];!beY2S9v_YIKg.M/,+ZrN*H!*_6soFz#2tc7/rI9%$A,7Lq=#rDW{OMC@bcHZBn3Fnw!$l8hN)iD%{-b{qO=O.Hq!#d{8Zdey?lV?[859U0LIBVO]_nib@uS1pdn4/}Y/eUnJRFIpT,RZJFYWIMn!gWty}Y4:2,pqSdzC^9hJ^M:pw;)V9,U6j+Q6z(o))4rg4(,sD;vle1L6qpY{?]@D*w(MZUJd^wp5JQNlY4ZGBAn(=%BR;Zdu%XrJ8Cg33nPcFMsZFS,*YzXRfaZ++a-W}!5N9{GW+Aei:h?S?iAT}/*tTSJo+Q#-1l(j99q@;V_4?q9Tj%Sg!z]2HsY.(e?qQ;a8O6b71qiF]R3:#eUcDtpE#TPREys,hI,EX=O1]TeN3N/1SBbQzY=Z-$Br(hle9R^=W{K!JX581wnIw[[i.zDP$REXijph!2rzKyCy1bR=?*$YQ;w2o$P1fwJ3^+1E8sSX,TM-PV+;/mp/H=!#n@M@DTEah@/q,5(U6eFvfqj%avd?:WXVSN,Yd_V0m]b7SQ,sL8!R{gH-G{b4wztjmlyIr3KzKOP#w!5a-Hi*%ha;GUpxC#4%I/eb@55H%*b}R(Q:F6S@XF-5rir_l(9tx6lP8Heh%g%hGe{e!;f=MHodl?E2:!2*b^+)JdfhrMa8f-eQ]b4p?1O6:N[4PaAH?Va]9=1#Sh+t*J/0b[S!Fr{mHB]PKLs.?e6Vf4^ahx$x?Y.daMx[-;.Ey)e.).=2C]aLHYyx)H^??+*k?VHccngm*egm9#;EfCZ?t.;#p+=p?}vO0-rWC.k62QWKjTYD+6ylA1(eD}qgUA*/zB+B.79qBJ[Lpl?P^FAmr[Q+#j{/_zp:-fY{?R6+bfqWu9bd6t%(2%@7=6Jc??vId,W[%,jU)6^9tYVJy{fs3-wmt@TN-v+F},p;6}]j=8gjiSZz:suE5rU!_ZemO)yjvfq]2!Ql3,BdP]2l@HfeNtdRc$</frmHeroEditor>
+  </Forms>
   <CheatEntries>
     <CheatEntry>
       <ID>8</ID>
-      <Description>"Find Item (upgrade any stat)"</Description>
+      <Description>"Find Item (aobscan edition)"</Description>
       <Options moHideChildren="1"/>
       <Color>FF0000</Color>
       <VariableType>Auto Assembler Script</VariableType>
@@ -871,7 +875,7 @@ D800:Physical
     </CheatEntry>
     <CheatEntry>
       <ID>106</ID>
-      <Description>"Find Item (upgrade any stat) (backup)"</Description>
+      <Description>"Find Item (upgrade any stat)"</Description>
       <Options moHideChildren="1"/>
       <Color>FF0000</Color>
       <VariableType>Auto Assembler Script</VariableType>
@@ -1908,11 +1912,11 @@ function test_fn()
 end
 
 local game_engine = get_instance_of_ptr(get_object_reference(45))
-printf("%s found at 0x%X", get_full_object_name_ptr(game_engine), game_engine)
+--printf("%s found at 0x%X", get_full_object_name_ptr(game_engine), game_engine)
 registerSymbol("game_engine", game_engine)
 
 local hero_manager = get_instance_of_ptr(get_object_reference(37643))
-printf("%s found at 0x%X", get_full_object_name_ptr(hero_manager), hero_manager)
+--printf("%s found at 0x%X", get_full_object_name_ptr(hero_manager), hero_manager)
 registerSymbol("hero_manager", hero_manager)
 
 {$asm}
@@ -2142,6 +2146,20 @@ unregistersymbol(shouldrun)
           <ShowAsSigned>0</ShowAsSigned>
           <VariableType>4 Bytes</VariableType>
           <Address>shouldrun</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>349</ID>
+          <Description>"Hero Editor"</Description>
+          <VariableType>Auto Assembler Script</VariableType>
+          <AssemblerScript>{$lua}
+if syntaxcheck then return end
+
+[ENABLE]
+frmHeroEditor.show()
+
+[DISABLE]
+frmHeroEditor.hide()
+</AssemblerScript>
         </CheatEntry>
         <CheatEntry>
           <ID>251</ID>
@@ -2754,73 +2772,175 @@ DunDefGame.exe+90B57: 8D 4D E4                       - lea ecx,[ebp-1C]
                                       </Offsets>
                                       <CheatEntries>
                                         <CheatEntry>
-                                          <ID>308</ID>
-                                          <Description>"HeroHealthModifier"</Description>
-                                          <ShowAsSigned>0</ShowAsSigned>
-                                          <VariableType>4 Bytes</VariableType>
-                                          <Address>game_engine</Address>
-                                          <Offsets>
-                                            <Offset>4D8</Offset>
-                                            <Offset>D10</Offset>
-                                            <Offset>214</Offset>
-                                            <Offset>40</Offset>
-                                            <Offset>0</Offset>
-                                            <Offset>478</Offset>
-                                          </Offsets>
+                                          <ID>356</ID>
+                                          <Description>"Stats"</Description>
+                                          <GroupHeader>1</GroupHeader>
+                                          <CheatEntries>
+                                            <CheatEntry>
+                                              <ID>357</ID>
+                                              <Description>"HeroHealthModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4D8</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>314</ID>
+                                              <Description>"HeroSpeedModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4DC</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>313</ID>
+                                              <Description>"HeroDamageModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4E0</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>315</ID>
+                                              <Description>"HeroCastingModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4E4</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>351</ID>
+                                              <Description>"HeroAbilityOneModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4E8</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>350</ID>
+                                              <Description>"HeroAbilityTwoModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4EC</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>355</ID>
+                                              <Description>"HeroDefenseHealthModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4F0</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>354</ID>
+                                              <Description>"HeroDefenseAttackRateModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4F4</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>353</ID>
+                                              <Description>"HeroDefenseDamageModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4F8</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                            <CheatEntry>
+                                              <ID>312</ID>
+                                              <Description>"HeroDefenseAreaOfEffectModifier"</Description>
+                                              <ShowAsSigned>0</ShowAsSigned>
+                                              <VariableType>4 Bytes</VariableType>
+                                              <Address>game_engine</Address>
+                                              <Offsets>
+                                                <Offset>4FC</Offset>
+                                                <Offset>D10</Offset>
+                                                <Offset>214</Offset>
+                                                <Offset>40</Offset>
+                                                <Offset>0</Offset>
+                                                <Offset>478</Offset>
+                                              </Offsets>
+                                            </CheatEntry>
+                                          </CheatEntries>
                                         </CheatEntry>
                                         <CheatEntry>
-                                          <ID>314</ID>
-                                          <Description>"HeroSpeedModifier"</Description>
+                                          <ID>311</ID>
+                                          <Description>"HeroName"</Description>
                                           <ShowAsSigned>0</ShowAsSigned>
-                                          <VariableType>4 Bytes</VariableType>
+                                          <VariableType>String</VariableType>
+                                          <Length>10</Length>
+                                          <Unicode>1</Unicode>
+                                          <CodePage>0</CodePage>
+                                          <ZeroTerminate>1</ZeroTerminate>
                                           <Address>game_engine</Address>
                                           <Offsets>
-                                            <Offset>4DC</Offset>
-                                            <Offset>D10</Offset>
-                                            <Offset>214</Offset>
-                                            <Offset>40</Offset>
                                             <Offset>0</Offset>
-                                            <Offset>478</Offset>
-                                          </Offsets>
-                                        </CheatEntry>
-                                        <CheatEntry>
-                                          <ID>313</ID>
-                                          <Description>"HeroDamageModifier"</Description>
-                                          <ShowAsSigned>0</ShowAsSigned>
-                                          <VariableType>4 Bytes</VariableType>
-                                          <Address>game_engine</Address>
-                                          <Offsets>
-                                            <Offset>4E0</Offset>
-                                            <Offset>D10</Offset>
-                                            <Offset>214</Offset>
-                                            <Offset>40</Offset>
-                                            <Offset>0</Offset>
-                                            <Offset>478</Offset>
-                                          </Offsets>
-                                        </CheatEntry>
-                                        <CheatEntry>
-                                          <ID>315</ID>
-                                          <Description>"HeroCastingModifier"</Description>
-                                          <ShowAsSigned>0</ShowAsSigned>
-                                          <VariableType>4 Bytes</VariableType>
-                                          <Address>game_engine</Address>
-                                          <Offsets>
-                                            <Offset>4E4</Offset>
-                                            <Offset>D10</Offset>
-                                            <Offset>214</Offset>
-                                            <Offset>40</Offset>
-                                            <Offset>0</Offset>
-                                            <Offset>478</Offset>
-                                          </Offsets>
-                                        </CheatEntry>
-                                        <CheatEntry>
-                                          <ID>312</ID>
-                                          <Description>"HeroLevel"</Description>
-                                          <ShowAsSigned>0</ShowAsSigned>
-                                          <VariableType>4 Bytes</VariableType>
-                                          <Address>game_engine</Address>
-                                          <Offsets>
-                                            <Offset>500</Offset>
+                                            <Offset>538</Offset>
                                             <Offset>D10</Offset>
                                             <Offset>214</Offset>
                                             <Offset>40</Offset>
@@ -2859,18 +2979,13 @@ DunDefGame.exe+90B57: 8D 4D E4                       - lea ecx,[ebp-1C]
                                           </Offsets>
                                         </CheatEntry>
                                         <CheatEntry>
-                                          <ID>311</ID>
-                                          <Description>"HeroName"</Description>
+                                          <ID>308</ID>
+                                          <Description>"MaximumDamageResistance"</Description>
                                           <ShowAsSigned>0</ShowAsSigned>
-                                          <VariableType>String</VariableType>
-                                          <Length>10</Length>
-                                          <Unicode>1</Unicode>
-                                          <CodePage>0</CodePage>
-                                          <ZeroTerminate>1</ZeroTerminate>
+                                          <VariableType>Float</VariableType>
                                           <Address>game_engine</Address>
                                           <Offsets>
-                                            <Offset>0</Offset>
-                                            <Offset>538</Offset>
+                                            <Offset>4B4</Offset>
                                             <Offset>D10</Offset>
                                             <Offset>214</Offset>
                                             <Offset>40</Offset>
@@ -4122,23 +4237,23 @@ unregisterSymbol("ptr_gengine")
     </SymbolEntry>
     <SymbolEntry>
       <Name>base</Name>
-      <Address>D60000</Address>
+      <Address>670000</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>gnames</Name>
-      <Address>1B92064</Address>
+      <Address>14A2064</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>gobjects</Name>
-      <Address>1BA437C</Address>
+      <Address>14B437C</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>game_engine</Name>
-      <Address>26E1A474</Address>
+      <Address>2706A474</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>hero_manager</Name>
-      <Address>26E1A534</Address>
+      <Address>2706A534</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
@@ -5911,6 +6026,8 @@ Author: ametalon, based on "compact mode" by mgr.inz.Player
 Date: 2020-07-07
 ]]
 
+if syntaxcheck then return end
+
 package.preload["ce.view_mode"] = function(...)
   local _m = {}
 
@@ -5976,7 +6093,118 @@ package.preload["ce.view_mode"] = function(...)
   return _m
 end
 
+
+---------------- forms -------------------
 require("ce.view_mode")
+function testform1_testbutton1Click(sender)
+    print("hello")
+end
+
+function frmHeroEditor_FormShow(sender)
+    frmHeroEditor_btnReadClick()
+end
+
+function frmHeroEditor_btnCloseClick(sender)
+    frmHeroEditor.hide()
+end
+
+local old_hero_address, old_hero_name
+function frmHeroEditor_btnReadClick(sender)
+    --print("read fn")
+    local hero_address = getAddressSafe("[[[[[[game_engine]+478]+0]+40]+214]+D10]+0")
+
+    if hero_address == nil then return end
+
+
+    local hero_name = readString("[[[[[[[game_engine]+478]+0]+40]+214]+D10]+538]+0", 30, true)
+    local hero_level = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+500")
+    local hero_experience = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+50C")
+
+    local hero_health = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4D8")
+    local hero_damage = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4E0")
+    local hero_speed = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4DC")
+    local hero_casting = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4E4")
+    local hero_ab1 = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4E8")
+    local hero_ab2 = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4EC")
+
+    local defense_health = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4F0")
+    local defense_damage = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4F8")
+    local defense_range = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4FC")
+    local defense_rate = readInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4F4")
+
+    frmHeroEditor.txtAddress.Text = string.format("0x%X", hero_address)
+
+    frmHeroEditor_txtHeroName.Text = hero_name
+    frmHeroEditor_txtHeroLevel.Text = hero_level
+    frmHeroEditor_txtExperience.Text = hero_experience
+
+    frmHeroEditor_txtHeroHealth.Text = hero_health
+    frmHeroEditor_txtHeroDamage.Text = hero_damage
+    frmHeroEditor_txtHeroSpeed.Text = hero_speed
+    frmHeroEditor_txtHeroCasting.Text = hero_casting
+    frmHeroEditor_txtHeroAb1.Text = hero_ab1
+    frmHeroEditor_txtHeroAb2.Text = hero_ab2
+
+    frmHeroEditor_txtDefenseHealth.Text = defense_health
+    frmHeroEditor_txtDefenseDamage.Text = defense_damage
+    frmHeroEditor_txtDefenseRange.Text = defense_range
+    frmHeroEditor_txtDefenseRate.Text = defense_rate
+
+    old_hero_address = hero_address
+    old_hero_name = hero_name
+end
+
+function frmHeroEditor_btnWriteClick(sender)
+    local hero_address = getAddressSafe("[[[[[[game_engine]+478]+0]+40]+214]+D10]+0")
+
+    if hero_address == nil then return end
+
+    if hero_address ~= old_hero_address then
+        local hero_name = readString("[[[[[[[game_engine]+478]+0]+40]+214]+D10]+538]+0", 30, true)
+        local prompt = string.format("Hero changed: Attempting to write %s to %s. Continue?", old_hero_name, hero_name)
+        local result = messageDialog(prompt, mtWarning, mbNo, mbYes)
+        if result ~= 6 then return end -- 6 = yes, return if user didnt click yes
+    end
+
+    local hero_name = frmHeroEditor_txtHeroName.Text
+    local hero_level = frmHeroEditor_txtHeroLevel.Text
+    local hero_experience = frmHeroEditor_txtExperience.Text
+
+    local hero_health = frmHeroEditor_txtHeroHealth.Text
+    local hero_damage = frmHeroEditor_txtHeroDamage.Text
+    local hero_speed = frmHeroEditor_txtHeroSpeed.Text
+    local hero_casting = frmHeroEditor_txtHeroCasting.Text
+    local hero_ab1 = frmHeroEditor_txtHeroAb1.Text
+    local hero_ab2 = frmHeroEditor_txtHeroAb2.Text
+
+    local defense_health = frmHeroEditor_txtDefenseHealth.Text
+    local defense_damage = frmHeroEditor_txtDefenseDamage.Text
+    local defense_range = frmHeroEditor_txtDefenseRange.Text
+    local defense_rate = frmHeroEditor_txtDefenseRate.Text
+
+    -- no need to write name currently
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+500", hero_level)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+50C", hero_experience)
+
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4D8", hero_health)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4E0", hero_damage)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4DC", hero_speed)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4E4", hero_casting)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4E8", hero_ab1)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4EC", hero_ab2)
+
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4F0", defense_health)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4F8", defense_damage)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4FC", defense_range)
+    writeInteger("[[[[[[game_engine]+478]+0]+40]+214]+D10]+4F4", defense_rate)
+
+
+end
+
+function frmHeroEditor_btnEditColorsClick(sender)
+    showMessage("not yet implemented")
+end
+
 </LuaScript>
   <DisassemblerComments>
     <DisassemblerComment>
