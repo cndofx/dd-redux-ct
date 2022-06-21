@@ -9,7 +9,7 @@
     <CheatEntry>
       <ID>226</ID>
       <Description>"main script (takes a few seconds to run)"</Description>
-      <Options moHideChildren="1" moDeactivateChildrenAsWell="1"/>
+      <Options moDeactivateChildrenAsWell="1"/>
       <Color>FF8000</Color>
       <VariableType>Auto Assembler Script</VariableType>
       <AssemblerScript>[ENABLE]
@@ -54,13 +54,18 @@ createThread(code1)
 if syntaxcheck then return end
 
 local base = getAddressSafe("DunDefGame.exe")
+local module_size = getModuleSize("DunDefGame.exe")
+local module_end = base + module_size
 local gnames = getAddressSafe("DunDefGame.exe+0E32064")
 local gobjects = getAddressSafe("DunDefGame.exe+0E4437C")
 local gnames_array = getAddressSafe("[DunDefGame.exe+0E32064]")
 local gobjects_array = getAddressSafe("[DunDefGame.exe+0E4437C]")
 
---printf("module base 0x%X", base)
+--printf("module base 0x%08X", base)
 registerSymbol("base", base)
+--printf("module size 0x%08X", module_size)
+--printf("module end 0x%08X", module_end)
+registerSymbol("module_end", module_end)
 --printf("gnames 0x%X", gnames)
 registerSymbol("gnames", gnames)
 --printf("gobjects 0x%X", gobjects)
@@ -955,6 +960,7 @@ DunDefGame.exe+90B57: 8D 4D E4                       - lea ecx,[ebp-1C]
                                     <CheatEntry>
                                       <ID>300</ID>
                                       <Description>"Pawn"</Description>
+                                      <Options moHideChildren="1"/>
                                       <ShowAsSigned>0</ShowAsSigned>
                                       <GroupHeader>1</GroupHeader>
                                       <Address>game_engine</Address>
@@ -1744,6 +1750,38 @@ DunDefGame.exe+90B57: 8D 4D E4                       - lea ecx,[ebp-1C]
                                       <Offsets>
                                         <Offset>0</Offset>
                                         <Offset>964</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>376</ID>
+                                      <Description>"No description"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Binary</VariableType>
+                                      <BitStart>0</BitStart>
+                                      <BitLength>30</BitLength>
+                                      <ShowAsBinary>0</ShowAsBinary>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>3C0</Offset>
+                                        <Offset>40</Offset>
+                                        <Offset>0</Offset>
+                                        <Offset>478</Offset>
+                                      </Offsets>
+                                    </CheatEntry>
+                                    <CheatEntry>
+                                      <ID>377</ID>
+                                      <Description>"No description"</Description>
+                                      <ShowAsSigned>0</ShowAsSigned>
+                                      <VariableType>Binary</VariableType>
+                                      <BitStart>0</BitStart>
+                                      <BitLength>1</BitLength>
+                                      <ShowAsBinary>0</ShowAsBinary>
+                                      <Address>game_engine</Address>
+                                      <Offsets>
+                                        <Offset>3C0</Offset>
                                         <Offset>40</Offset>
                                         <Offset>0</Offset>
                                         <Offset>478</Offset>
@@ -4254,15 +4292,11 @@ D800:Physical
                       <VariableType>4 Bytes</VariableType>
                       <Address>shouldrun</Address>
                     </CheatEntry>
-                  </CheatEntries>
-                </CheatEntry>
-              </CheatEntries>
-            </CheatEntry>
-            <CheatEntry>
-              <ID>372</ID>
-              <Description>"ProcessEvent Hook 2.0"</Description>
-              <VariableType>Auto Assembler Script</VariableType>
-              <AssemblerScript>[ENABLE]
+                    <CheatEntry>
+                      <ID>372</ID>
+                      <Description>"ProcessEvent Hook 2.0 (old)"</Description>
+                      <VariableType>Auto Assembler Script</VariableType>
+                      <AssemblerScript>[ENABLE]
 
 aobscanmodule(ProcessEventHook,DunDefGame.exe,55 8B EC 6A FF 68 80 6E) // should be unique
 alloc(newmem,$1000)
@@ -4270,8 +4304,11 @@ alloc(newmem,$1000)
 label(code)
 label(return)
 label(continue)
+label(noerror) // try-except for c code
 
 {$c}
+//int ifhit1 = 0;
+
 char* getObjectName(int* pObject) {
     extern void* gnames;
     char buffer[256];
@@ -4322,9 +4359,13 @@ char* getFullObjectName(int* pObject) {
 newmem:
 
 code:
+{$try}
+push ecx
+push edx
 push eax // should continue running ProcessEvent?
 mov eax,1
-{$ccode pObject=ecx pFunction=edx shouldContinue=eax}
+{$ccode pFunction=edx shouldContinue=eax stack=esp}
+pFunction = *(int*)(stack+0x4);
 // ecx = base address of UObject
 // edx = base address of UFunction
 if (pFunction &lt; 0x1000) { return; } // sometimes pFunction is a small value instead of a UFunction address
@@ -4382,8 +4423,19 @@ if (pClassNameIndex != 0x90AF) { // invalid objects seem to contain 0x90AF inste
 }
 
 {$asm}
+jmp noerror
+
+{$except}
+pop eax
+pop edx
+pop ecx
+jmp continue
+
+noerror:
   cmp eax,1 // continue if shouldContinue == 1
   pop eax
+  pop edx
+  pop ecx
   je continue
   ret
 
@@ -4433,6 +4485,290 @@ DunDefGame.exe+90B19: 33 C5              - xor eax,ebp
 DunDefGame.exe+90B1B: 89 45 F0           - mov [ebp-10],eax
 DunDefGame.exe+90B1E: 53                 - push ebx
 }
+</AssemblerScript>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>378</ID>
+                      <Description>"ProcessEvent Hook 2.0 (still old)"</Description>
+                      <VariableType>Auto Assembler Script</VariableType>
+                      <AssemblerScript>[ENABLE]
+
+aobscanmodule(ProcessEventHook,DunDefGame.exe,55 8B EC 6A FF 68 80 6E) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(continue)
+label(noerror) // try-except for c code
+
+{$c}
+//int ifhit1 = 0;
+
+char* getObjectName(int* pObject) {
+    extern void* gnames;
+    char buffer[256];
+
+    if (pObject &lt; 0x1000) { return &amp;buffer; }
+
+    int nameCount = *(int*)(&amp;gnames+0x1);
+    int nameIndex = *(int*)(pObject+0xB);
+    int offset = nameIndex*4;
+
+    if (nameIndex &lt; 0 || nameIndex &gt;= nameCount) { return &amp;buffer; }
+    char* name = *(char**)(gnames+offset)+0x10;
+    strncpy(buffer, name, 100);
+
+    return &amp;buffer;
+}
+
+char* getFullObjectName(int* pObject) {
+    char buffer[256];
+
+    if (pObject &lt; 0x1000) { return &amp;buffer; }
+
+    int* pOuterOuter = (int*)(pObject+0xA); // 0x28
+    pOuterOuter = (int*)(*pOuterOuter+0x28); // 0x28
+
+    if (*pOuterOuter) {
+      strncpy(buffer, getObjectName(*(int*)(pObject+0xD)), 100); // class name
+      strcat(buffer, " ");
+      strncat(buffer, getObjectName(*pOuterOuter), 100); // outer outer name
+      strcat(buffer, ".");
+      strncat(buffer, getObjectName(*(int*)(pObject+0xA)), 100); // outer name
+      strcat(buffer, ".");
+      strncat(buffer, getObjectName(pObject), 100); // name
+   } else {
+      strncpy(buffer, getObjectName(*(int*)(pObject+0xD)), 100); // class name
+      strcat(buffer, " ");
+      strncat(buffer, getObjectName(*(int*)(pObject+0xA)), 100); // outer name
+      strcat(buffer, ".");
+      strncat(buffer, getObjectName(pObject), 100); // name
+   }
+
+   return &amp;buffer;
+}
+
+
+{$asm}
+
+newmem:
+
+code:
+{$try}
+push ecx
+push edx
+push eax // should continue running ProcessEvent?
+mov eax,1
+{$ccode stack=esp shouldContinue=eax}
+
+int object = *(int*)(stack+0x4);
+
+int namePointer = object+0x2C;
+int nameIndex = *(int*)namePointer;
+
+
+
+
+{$asm}
+jmp noerror
+
+{$except}
+pop eax
+pop edx
+pop ecx
+jmp continue
+
+noerror:
+  cmp eax,1 // continue if shouldContinue == 1
+  pop eax
+  pop edx
+  pop ecx
+  je continue
+  ret
+
+continue:
+  push ebp
+  mov ebp,esp
+  push -01
+  jmp return
+
+ProcessEventHook:
+  jmp newmem
+return:
+registersymbol(ProcessEventHook)
+
+[DISABLE]
+
+ProcessEventHook:
+  db 55 8B EC 6A FF
+
+unregistersymbol(ProcessEventHook)
+dealloc(newmem)
+
+{
+// ORIGINAL CODE - INJECTION POINT: DunDefGame.exe+90B00
+
+DunDefGame.exe+90AF4: C2 0C 00           - ret 000C
+DunDefGame.exe+90AF7: CC                 - int 3 
+DunDefGame.exe+90AF8: CC                 - int 3 
+DunDefGame.exe+90AF9: CC                 - int 3 
+DunDefGame.exe+90AFA: CC                 - int 3 
+DunDefGame.exe+90AFB: CC                 - int 3 
+DunDefGame.exe+90AFC: CC                 - int 3 
+DunDefGame.exe+90AFD: CC                 - int 3 
+DunDefGame.exe+90AFE: CC                 - int 3 
+DunDefGame.exe+90AFF: CC                 - int 3 
+// ---------- INJECTING HERE ----------
+DunDefGame.exe+90B00: 55                 - push ebp
+// ---------- DONE INJECTING  ----------
+DunDefGame.exe+90B01: 8B EC              - mov ebp,esp
+DunDefGame.exe+90B03: 6A FF              - push -01
+DunDefGame.exe+90B05: 68 80 6E 28 01     - push DunDefGame.exe+9D6E80
+DunDefGame.exe+90B0A: 64 A1 00 00 00 00  - mov eax,fs:[00000000]
+DunDefGame.exe+90B10: 50                 - push eax
+DunDefGame.exe+90B11: 83 EC 40           - sub esp,40
+DunDefGame.exe+90B14: A1 E0 82 66 01     - mov eax,[DunDefGame.exe+DB82E0]
+DunDefGame.exe+90B19: 33 C5              - xor eax,ebp
+DunDefGame.exe+90B1B: 89 45 F0           - mov [ebp-10],eax
+DunDefGame.exe+90B1E: 53                 - push ebx
+}
+</AssemblerScript>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>379</ID>
+              <Description>"ProcessEvent Hook 2.0"</Description>
+              <VariableType>Auto Assembler Script</VariableType>
+              <AssemblerScript>[ENABLE]
+
+aobscanmodule(ProcessEventHook,DunDefGame.exe,55 8B EC 6A FF 68 80 6E) // should be unique
+alloc(newmem,$1000)
+
+label(code)
+label(return)
+label(continue)
+
+{$c}
+extern int gnames;
+char buffer[256];
+char buffer2[256];
+
+void ZeroMemory(char* dest, int size) {
+     for (int i = 0; i &lt; size; i++) {
+         *(dest+i) = 0;
+     }
+}
+
+void getFullObjectName(char* dest, int object) {
+     int namePointer = object+0x2C;
+     int nameIndex = *(int*)namePointer;
+
+     int classPointer = object+0x34;
+     classPointer = *(int*)classPointer+0x2C;
+     int classIndex = *(int*)classPointer;
+
+     int outerPointer = object+0x28;
+     outerPointer = *(int*)outerPointer+0x2C;
+     int outerIndex = *(int*)outerPointer;
+
+     int outerOuterPointer = object+0x28;
+     outerOuterPointer = *(int*)outerOuterPointer+0x28;
+
+     ZeroMemory(dest, 256);
+
+     if (outerOuterPointer) {
+         outerOuterPointer = *(int*)outerOuterPointer+0x2C;
+         int outerOuterIndex = *(int*)outerOuterPointer;
+
+         strncpy(dest, *(char**)(gnames+classIndex*4)+0x10, 100); // class name
+         strcat(dest, " ");
+         strncat(dest, *(char**)(gnames+outerOuterIndex*4)+0x10, 100); // outer outer name
+         strcat(dest, ".");
+         strncat(dest, *(char**)(gnames+outerIndex*4)+0x10, 100); // outer name
+         strcat(dest, ".");
+         strncat(dest, *(char**)(gnames+nameIndex*4)+0x10, 100); // name
+     } else {
+         strncpy(dest, *(char**)(gnames+classIndex*4)+0x10, 100); // class name
+         strcat(dest, " ");
+         strncat(dest, *(char**)(gnames+outerIndex*4)+0x10, 100); // outer name
+         strcat(dest, ".");
+         strncat(dest, *(char**)(gnames+nameIndex*4)+0x10, 100); // name
+     }
+}
+
+{$asm}
+
+newmem:
+
+code:
+
+push eax // should continue running ProcessEvent?
+mov eax,1
+
+{$ccode stack=esp shouldContinue=eax}
+//ZeroMemory(buffer, 256); // already zero'd in the get name function
+
+int object = *(int*)(stack+0x8); // esp+0x4, accounting for the `push eax` above
+
+getFullObjectName(buffer, object);
+
+if (strcmp(buffer, "Function UDKGame.DunDefTower.HackerCheck") == 0) {
+   shouldContinue = 0;
+   return;
+}
+if (strcmp(buffer, "Function UDKGame.Main.CheckMap") == 0) {
+   shouldContinue = 0;
+   return;
+}
+if (strcmp(buffer, "Function UDKGame.Main.SendPlayerStats") == 0) {
+  shouldContinue = 0;
+   return;
+}
+if (strcmp(buffer, "Function Engine.LocalPlayer.GetNickname") == 0) {
+   shouldContinue = 0;
+   return;
+}
+if (strcmp(buffer, "Function Engine.LocalPlayer.GetUniqueNetId") == 0) {
+   shouldContinue = 0;
+   return;
+}
+if (strcmp(buffer, "Function Engine.GameInfo.EnableStandbyCheatDetection") == 0) {
+   shouldContinue = 0;
+   return;
+}
+if (strcmp(buffer, "Function UDKGame.Main.KickEveryoneWithWarning") == 0) {
+   shouldContinue = 0;
+   return;
+}
+
+{$asm}
+  cmp eax,1 // continue if shouldContinue == 1
+  pop eax
+  je continue
+  ret C
+
+continue:
+  push ebp
+  mov ebp,esp
+  push -01
+  jmp return
+
+ProcessEventHook:
+  jmp newmem
+return:
+registersymbol(ProcessEventHook)
+
+[DISABLE]
+
+ProcessEventHook:
+  db 55 8B EC 6A FF
+
+unregistersymbol(ProcessEventHook)
+dealloc(newmem)
+
 </AssemblerScript>
             </CheatEntry>
           </CheatEntries>
@@ -4534,23 +4870,27 @@ DunDefGame.exe+90B1E: 53                 - push ebx
     </SymbolEntry>
     <SymbolEntry>
       <Name>base</Name>
-      <Address>F90000</Address>
+      <Address>320000</Address>
+    </SymbolEntry>
+    <SymbolEntry>
+      <Name>module_end</Name>
+      <Address>1318000</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>gnames</Name>
-      <Address>1DC2064</Address>
+      <Address>1152064</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>gobjects</Name>
-      <Address>1DD437C</Address>
+      <Address>116437C</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>game_engine</Name>
-      <Address>26FAA474</Address>
+      <Address>269FA474</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>hero_manager</Name>
-      <Address>26FAA534</Address>
+      <Address>269FA534</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
