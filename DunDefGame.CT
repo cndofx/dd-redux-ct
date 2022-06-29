@@ -1008,7 +1008,7 @@ unregistersymbol(testvar2)
                       <GroupHeader>1</GroupHeader>
                       <CheatEntries>
                         <CheatEntry>
-                          <ID>259</ID>
+                          <ID>417</ID>
                           <Description>"Class.Name.Index"</Description>
                           <ShowAsSigned>0</ShowAsSigned>
                           <VariableType>4 Bytes</VariableType>
@@ -1049,6 +1049,66 @@ unregistersymbol(testvar2)
                           <Address>testvar</Address>
                           <Offsets>
                             <Offset>2C</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>259</ID>
+                          <Description>"Class.Name"</Description>
+                          <ShowAsSigned>0</ShowAsSigned>
+                          <VariableType>String</VariableType>
+                          <Length>100</Length>
+                          <Unicode>0</Unicode>
+                          <CodePage>0</CodePage>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>gnames</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                            <Offset>[[[testvar]+34]+2C]*4</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>420</ID>
+                          <Description>"Outer.Outer.Name"</Description>
+                          <ShowAsSigned>0</ShowAsSigned>
+                          <VariableType>String</VariableType>
+                          <Length>100</Length>
+                          <Unicode>0</Unicode>
+                          <CodePage>0</CodePage>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>gnames</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                            <Offset>[[[[testvar]+28]+28]+2C]*4</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>419</ID>
+                          <Description>"Outer.Name"</Description>
+                          <ShowAsSigned>0</ShowAsSigned>
+                          <VariableType>String</VariableType>
+                          <Length>100</Length>
+                          <Unicode>0</Unicode>
+                          <CodePage>0</CodePage>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>gnames</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                            <Offset>[[[testvar]+28]+2C]*4</Offset>
+                          </Offsets>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>418</ID>
+                          <Description>"Name"</Description>
+                          <ShowAsSigned>0</ShowAsSigned>
+                          <VariableType>String</VariableType>
+                          <Length>100</Length>
+                          <Unicode>0</Unicode>
+                          <CodePage>0</CodePage>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>gnames</Address>
+                          <Offsets>
+                            <Offset>10</Offset>
+                            <Offset>[[testvar]+2C]*4</Offset>
                           </Offsets>
                         </CheatEntry>
                       </CheatEntries>
@@ -5786,12 +5846,13 @@ code:
 push eax // should continue running ProcessEvent?
 mov eax,1
 
-{$ccode stack=esp shouldContinue=eax}
+{$ccode stack=esp object=ecx shouldContinue=eax}
 //ZeroMemory(buffer, 256); // already zero'd in the get name function
 
-int object = *(int*)(stack+0x8); // esp+0x4, accounting for the `push eax` above
+int function = *(int*)(stack+0x8); // esp+0x4, accounting for the `push eax` above
+int object2 = object;
 
-getFullObjectName(buffer, object);
+getFullObjectName(buffer, function);
 
 if (strcmp(buffer, "Function UDKGame.DunDefTower.HackerCheck") == 0) {
    shouldContinue = 0;
@@ -5952,23 +6013,23 @@ dealloc(newmem)
     </SymbolEntry>
     <SymbolEntry>
       <Name>base</Name>
-      <Address>A60000</Address>
+      <Address>B90000</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>gnames</Name>
-      <Address>1892064</Address>
+      <Address>19C2064</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>gobjects</Name>
-      <Address>18A437C</Address>
+      <Address>19D437C</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>game_engine</Name>
-      <Address>2353A474</Address>
+      <Address>273EA474</Address>
     </SymbolEntry>
     <SymbolEntry>
       <Name>hero_manager</Name>
-      <Address>2353A534</Address>
+      <Address>273EA534</Address>
     </SymbolEntry>
   </UserdefinedSymbols>
   <Structures StructVersion="2">
